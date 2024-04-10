@@ -108,6 +108,37 @@ void saveFile(const DynamicArray* dynamicArray, const char* filename) {
     fclose(file);
 }
 
+void searchAndReplace(DynamicArray* dynamicArray, const char* search, const char* replace) {
+    char* found = strstr(dynamicArray->arr, search);
+    while (found != NULL) {
+        // Calculate the index of the found substring
+        size_t index = found - dynamicArray->arr;
+        
+        // Replace the substring with the new text
+        size_t searchLen = strlen(search);
+        size_t replaceLen = strlen(replace);
+        if (searchLen != replaceLen) {
+            if (searchLen < replaceLen) {
+                size_t newSize = dynamicArray->size + (replaceLen - searchLen);
+                if (newSize >= dynamicArray->capacity) {
+                    dynamicArray->capacity = newSize * 2;
+                    dynamicArray->arr = (char*)realloc(dynamicArray->arr, dynamicArray->capacity * sizeof(char));
+                }
+            }
+            memmove(dynamicArray->arr + index + replaceLen, dynamicArray->arr + index + searchLen, dynamicArray->size - index - searchLen);
+        }
+        memcpy(dynamicArray->arr + index, replace, replaceLen);
+        
+        // Update cursor position if needed
+        if (index <= dynamicArray->cursorPosition) {
+            dynamicArray->cursorPosition += replaceLen - searchLen;
+        }
+        
+        // Move to the next occurrence
+        found = strstr(found + replaceLen, search);
+    }
+}
+
 int main() {
     DynamicArray myArray = initDynamicArray(5);
     int flag = 0;
@@ -146,6 +177,19 @@ int main() {
             case 27: // Escape
                 flag = 1;
                 break;
+            case 'r': // Search and Replace
+                clrscr();
+                gotoxy(20, 0);
+                printf("Simple Notepad - Search and Replace\n");
+                gotoxy(0, 2);
+                char searchString[256];
+                char replaceString[256];
+                printf("Enter search string: ");
+                scanf("%255s", searchString);
+                printf("Enter replacement string: ");
+                scanf("%255s", replaceString);
+                searchAndReplace(&myArray, searchString, replaceString);
+                break;    
             case 'o': // Open file
                 clrscr();
                 gotoxy(20, 0);
